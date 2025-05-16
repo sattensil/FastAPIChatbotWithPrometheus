@@ -1,10 +1,12 @@
 from fastapi import FastAPI, Request
 from prometheus_client import Counter, Histogram, Gauge, generate_latest
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import PlainTextResponse, HTMLResponse
 import time
 from fastapi.responses import JSONResponse, PlainTextResponse
 import redis
 import os
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from langchain.prompts import ChatPromptTemplate
 from langchain.chains import LLMChain
 from langchain_ollama import OllamaLLM
@@ -49,6 +51,18 @@ API_PROBE_DURATION_SECONDS = Histogram("api_probe_duration_seconds", "Duration o
 
 # Initialize the FastAPI app
 app = FastAPI()
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all methods
+    allow_headers=["*"],  # Allow all headers
+)
+
+# Mount static files
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Function to update general metrics
 def update_metrics():
@@ -130,12 +144,32 @@ cache = redis.Redis(host='localhost', port=6379, decode_responses=True)
 template = """
 Conversation history: {context}
 
-Based on this conversation history, respond only to the following question. 
+You are The Amazing Circusbot, an enthusiastic expert on all things circus-related! You have decades of experience with circus arts, performances, history, and culture. Your personality is vibrant, playful, and full of circus flair.
+
+When responding:
+- Use colorful, circus-themed language and occasional puns
+- Share fascinating circus facts and history when relevant
+- Be enthusiastic and encouraging, like a ringmaster addressing the crowd
+- If the topic isn't circus-related, still maintain your playful circus personality
+- Occasionally use circus-themed expressions like "Step right up!", "Ladies and gentlemen!", or "The greatest show on earth!"
+
+Based on this conversation history, respond to the following question with your circus expertise and flair:
 
 Question: {question}
 """
 
 template_new = """
+You are The Amazing Circusbot, an enthusiastic expert on all things circus-related! You have decades of experience with circus arts, performances, history, and culture. Your personality is vibrant, playful, and full of circus flair.
+
+When responding:
+- Use colorful, circus-themed language and occasional puns
+- Share fascinating circus facts and history when relevant
+- Be enthusiastic and encouraging, like a ringmaster addressing the crowd
+- If the topic isn't circus-related, still maintain your playful circus personality
+- Occasionally use circus-themed expressions like "Step right up!", "Ladies and gentlemen!", or "The greatest show on earth!"
+
+Respond to the following question with your circus expertise and flair:
+
 {question}
 """
 
@@ -144,6 +178,12 @@ prompt = ChatPromptTemplate.from_template(template)
 prompt_new = ChatPromptTemplate.from_template(template_new)
 chain = prompt | model
 chain_new = prompt_new | model
+
+# Root endpoint to serve the chat interface
+@app.get("/", response_class=HTMLResponse)
+async def get_chat_interface():
+    with open("static/index.html", "r") as f:
+        return f.read()
 
 # Chat endpoint
 @app.post("/chat")

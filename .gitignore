@@ -40,6 +40,10 @@ ENV/
 *.log
 logs/
 chatbot.log
+log/
+**/logs/
+**/*.log.*
+**/*.log-*
 
 # Environment variables
 .env
@@ -69,3 +73,18 @@ prometheus_data/
 
 # Application specific
 conversation_history.json
+**/conversation_history*.json
+**/chat_history*.json
+**/user_data/
+**/conversations/
+
+# Poetry
+.venv/
+.poetry/
+poetry.toml
+
+# Local configuration
+*.local.yml
+*.local.yaml
+*.local.json
+*.local.config

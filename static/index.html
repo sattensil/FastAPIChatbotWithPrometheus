@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FastAPI Chatbot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .chat-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+            height: 400px;
+            overflow-y: auto;
+        }
+        .message {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .user-message {
+            background-color: #e3f2fd;
+            margin-left: 20%;
+            margin-right: 0;
+        }
+        .bot-message {
+            background-color: #f1f1f1;
+            margin-right: 20%;
+            margin-left: 0;
+        }
+        .input-container {
+            display: flex;
+            gap: 10px;
+        }
+        #user-input {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .links {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .links a {
+            margin: 0 10px;
+            color: #2196F3;
+            text-decoration: none;
+        }
+        .links a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h1>FastAPI Chatbot with Prometheus Monitoring</h1>
+    
+    <div class="chat-container" id="chat-container">
+        <div class="message bot-message">
+            🎪 Step right up, ladies and gentlemen! I'm The Amazing Circusbot, your ringmaster of knowledge and wonder! With decades under the big top, I'm here to dazzle you with circus facts, stories, and spectacular answers to all your questions. Whether you're curious about trapeze artists, clown history, or anything under the sun, I'm ready to put on the greatest show on earth just for you! What would you like to know today? 🎭
+        </div>
+    </div>
+    
+    <div class="input-container">
+        <input type="text" id="user-input" placeholder="Type your message here..." autofocus>
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <div class="links">
+        <a href="http://localhost:9090" target="_blank">Prometheus Dashboard</a>
+        <a href="http://localhost:3000" target="_blank">Grafana Dashboard</a>
+        <a href="http://localhost:8000/metrics" target="_blank">Raw Metrics</a>
+        <a href="http://localhost:8000/docs" target="_blank">API Documentation</a>
+    </div>
+
+    <script>
+        // Add event listener for Enter key
+        document.getElementById('user-input').addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        async function sendMessage() {
+            const userInput = document.getElementById('user-input');
+            const chatContainer = document.getElementById('chat-container');
+            
+            if (!userInput.value.trim()) return;
+            
+            // Add user message to chat
+            const userMessage = document.createElement('div');
+            userMessage.className = 'message user-message';
+            userMessage.textContent = userInput.value;
+            chatContainer.appendChild(userMessage);
+            
+            // Scroll to bottom
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            
+            // Create loading message
+            const loadingMessage = document.createElement('div');
+            loadingMessage.className = 'message bot-message';
+            loadingMessage.textContent = 'Thinking...';
+            chatContainer.appendChild(loadingMessage);
+            
+            // Clear input
+            const question = userInput.value;
+            userInput.value = '';
+            
+            try {
+                // Send request to API
+                const response = await fetch('http://localhost:8000/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ question: question })
+                });
+                
+                const data = await response.json();
+                
+                // Replace loading message with actual response
+                loadingMessage.textContent = data.answer;
+            } catch (error) {
+                loadingMessage.textContent = 'Sorry, there was an error processing your request.';
+                console.error('Error:', error);
+            }
+            
+            // Scroll to bottom again
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+    </script>
+</body>
+</html>
